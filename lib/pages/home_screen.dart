@@ -1,4 +1,6 @@
+import 'package:bulb_app/widgets/color_hex.dart';
 import 'package:bulb_app/widgets/my_button.dart';
+import 'package:bulb_app/widgets/my_slider.dart';
 import 'package:flutter/material.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -13,20 +15,32 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFF011C40),
-      body: Center(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          // mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Image.asset(
-              'assets/jelly/1 pinker.png',
-              fit: BoxFit.fitHeight,
-              height: 700,
+      backgroundColor: hexToColor('00033a'),
+      body: Stack(
+        children: [
+          Center(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Row(
+                  children: [
+                    Image.asset(
+                      'assets/jelly/1 pinker.png',
+                      fit: BoxFit.fitHeight,
+                      height: 700,
+                    ),
+                  ],
+                ),
+                MyButton(),
+              ],
             ),
-            MyButton(),
-          ],
-        ),
+          ),
+          Positioned(
+            left: 20,
+            top: MediaQuery.of(context).size.height / 2 - 100,
+            child: SizedBox(height: 200, width: 15, child: MySlider()),
+          ),
+        ],
       ),
     );
   }
