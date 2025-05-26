@@ -13,21 +13,18 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  get isSelected => null;
-
-  bool isToggled = true;
-  String ledStatus = 'Fetching...';
+  bool isToggled = true; //the switch is on kama its true
+  String ledStatus = 'Fetching...'; //Stores the current LED status on or off
   final String espIp = "http://192.168.100.43"; // Genius network IP
 
   @override
   void initState() {
     super.initState();
     fetchStatus(); // Fetch once on app start
-
-    // Poll every 3 seconds
-    Timer.periodic(Duration(seconds: 3), (timer) {
-      fetchStatus();
-    });
+    // // Poll every 3 seconds
+    // Timer.periodic(Duration(seconds: 3), (timer) {
+    //   fetchStatus();
+    // });
   }
 
   Future<void> toggleLED(bool value) async {
