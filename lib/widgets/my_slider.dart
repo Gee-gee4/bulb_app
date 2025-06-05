@@ -22,7 +22,7 @@ class _MySliderState extends State<MySlider> {
             max: 10,
             //divisions: 4,
             //label: currentValue.toString(),
-            activeColor: hexToColor('3D474E'),
+            activeColor: hexToColor('2b6fda'),
             onChanged: (value) {
               setState(() {
                 currentValue = value;

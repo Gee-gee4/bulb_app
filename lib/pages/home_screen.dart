@@ -15,9 +15,25 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: hexToColor('00033a'),
+      // Colors.grey[900],
       body: Stack(
         children: [
+          Positioned.fill(
+            child: Stack(
+              children: [
+                Image.asset(
+                  'assets/jelly/sea bg.jpeg', // replace with your image path
+                  fit: BoxFit.cover, // makes it fill the screen
+                ),
+                Container(
+                  color: Colors.black54,
+                  height: double.infinity,
+                  width: double.infinity,
+                ),
+              ],
+            ),
+          ),
+
           Center(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -31,7 +47,15 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                   ],
                 ),
-                MyButton(),
+                Text('Schedule', style: TextStyle(color: Colors.white)),
+                SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    myCard('Active', '6.00 ', 'PM'),
+                    myCard('Inactive', '11.00 ', 'PM'),
+                  ],
+                ),
               ],
             ),
           ),
@@ -39,6 +63,18 @@ class _HomeScreenState extends State<HomeScreen> {
             left: 20,
             top: MediaQuery.of(context).size.height / 2 - 100,
             child: SizedBox(height: 200, width: 15, child: MySlider()),
+          ),
+          Positioned(
+            right: 20,
+            top: MediaQuery.of(context).size.height / 2 - 100,
+            child: SizedBox(child: MyButton()),
+          ),
+          Positioned(
+            left: 20,
+            top: MediaQuery.of(context).size.height / 2 - 380,
+            child: SizedBox(
+              child: Icon(Icons.arrow_back_ios, color: Colors.white),
+            ),
           ),
         ],
       ),

@@ -15,51 +15,78 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   bool isToggled = true; //the switch is on kama its true
   String ledStatus = 'Fetching...'; //Stores the current LED status on or off
+  String relayStatus = 'Fetching...'; // Add this below ledStatus
   final String espIp = "http://192.168.100.43"; // Genius network IP
 
   @override
   void initState() {
     super.initState();
-    fetchStatus(); // Fetch once on app start
-    // // Poll every 3 seconds
-    // Timer.periodic(Duration(seconds: 3), (timer) {
-    //   fetchStatus();
-    // });
+    fetchStatus();
+    fetchRelayStatus();
   }
 
   Future<void> toggleLED(bool value) async {
-    final String route = value ? "/on" : "/off";
-    try {
-      final response = await http.get(Uri.parse('$espIp$route'));
-      if (response.statusCode == 200) {
-        print("ESP response: ${response.body}");
-        setState(() {
-          ledStatus = response.body;
-        });
-      } else {
-        print("Failed to toggle LED. Code: ${response.statusCode}");
-      }
-    } catch (e) {
-      print("Error: $e");
+  final String ledRoute = value ? "/on" : "/off";
+  final String relayRoute = value ? "/relay/on" : "/relay/off";
+
+  try {
+    final ledResponse = await http.get(Uri.parse('$espIp$ledRoute'));
+    final relayResponse = await http.get(Uri.parse('$espIp$relayRoute'));
+
+    if (ledResponse.statusCode == 200 && relayResponse.statusCode == 200) {
+      print("LED: ${ledResponse.body}, Relay: ${relayResponse.body}");
+      setState(() {
+        ledStatus = ledResponse.body;
+      });
+      await fetchRelayStatus(); // <-- Add this to update UI
+    } else {
+      print(
+        "Failed. LED code: ${ledResponse.statusCode}, Relay code: ${relayResponse.statusCode}",
+      );
     }
+  } catch (e) {
+    print("Error: $e");
   }
+}
+
 
   Future<void> fetchStatus() async {
+  try {
+    final response = await http.get(Uri.parse('$espIp/status'));
+    if (response.statusCode == 200) {
+      setState(() {
+        ledStatus = response.body;
+        isToggled = response.body.trim() == 'on';
+      });
+      await fetchRelayStatus(); // <-- Add this
+    } else {
+      setState(() {
+        ledStatus = 'Error fetching status';
+      });
+    }
+  } catch (e) {
+    setState(() {
+      ledStatus = 'Connection failed';
+    });
+  }
+}
+
+
+  Future<void> fetchRelayStatus() async {
     try {
-      final response = await http.get(Uri.parse('$espIp/status'));
+      final response = await http.get(Uri.parse('$espIp/relay/status'));
       if (response.statusCode == 200) {
         setState(() {
-          ledStatus = response.body;
-          isToggled = response.body.trim() == 'on';
+          relayStatus = response.body;
         });
       } else {
         setState(() {
-          ledStatus = 'Error fetching status';
+          relayStatus = 'Error fetching relay status';
         });
       }
     } catch (e) {
       setState(() {
-        ledStatus = 'Connection failed';
+        relayStatus = 'Connection failed';
       });
     }
   }
@@ -84,6 +111,12 @@ class _HomePageState extends State<HomePage> {
             const SizedBox(height: 40),
             Text(
               'Status from ESP: $ledStatus',
+              style: const TextStyle(fontSize: 18, color: Colors.grey),
+            ),
+            const SizedBox(height: 10),
+
+            Text(
+              'Relay Status: $relayStatus',
               style: const TextStyle(fontSize: 18, color: Colors.grey),
             ),
             const SizedBox(height: 10),
