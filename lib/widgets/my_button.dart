@@ -1,8 +1,7 @@
-import 'dart:math';
-
 import 'package:animated_toggle_switch/animated_toggle_switch.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class MyButton extends StatefulWidget {
   const MyButton({super.key});
@@ -13,95 +12,102 @@ class MyButton extends StatefulWidget {
 
 class _ButtonState extends State<MyButton> {
   bool firstSwitchValue = false;
+  bool isLoading = false;
+  final String espIP = "http://192.168.100.48";
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRelayStatus();
+  }
+
+  Future<void> fetchRelayStatus() async {
+    try {
+      final response = await http
+          .get(Uri.parse("$espIP/status"))
+          .timeout(Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        setState(() => firstSwitchValue = response.body.trim() == "on");
+      }
+    } catch (e) {
+      // Optional: Show warning ESP not reachable
+    }
+  }
+
+  Future<void> toggleRelay(bool newValue) async {
+    setState(() => isLoading = true);
+
+    try {
+      final endpoint = newValue ? "/on" : "/off";
+      final response = await http
+          .get(Uri.parse("$espIP$endpoint"))
+          .timeout(Duration(seconds: 3));
+
+      if (response.statusCode == 200) {
+        setState(() => firstSwitchValue = newValue);
+      } else {
+        showError("Unexpected response from ESP.");
+      }
+    } catch (e) {
+      showError("Cannot reach ESP. Is the bulb switch ON and on same Wi-Fi?");
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
+  void showError(String msg) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(msg), backgroundColor: Colors.red));
+  }
 
   @override
   Widget build(BuildContext context) {
-    return RotatedBox(
-      quarterTurns: -3,
-      child: DefaultTextStyle.merge(
-        style: TextStyle(
-          color: Colors.white,
-          fontSize: 18,
-          fontWeight: FontWeight.bold,
-        ),
-        child: IconTheme.merge(
-          data: IconThemeData(color: Colors.white),
-          child: AnimatedToggleSwitch.dual(
-            current: firstSwitchValue,
-            first: false,
-            second: true,
-            spacing: 45,
-            animationDuration: Duration(milliseconds: 600),
-            style: ToggleStyle(
-              borderColor: Colors.transparent,
-              indicatorColor: Colors.white,
-              backgroundColor: Colors.black,
-            ),
-            customStyleBuilder: (context, local, global) {
-              if (global.position <= 0) {
-                ToggleStyle(backgroundColor: Colors.red);
-              }
-              return ToggleStyle(
-                backgroundGradient: LinearGradient(
-                  colors: [Colors.green, Colors.red],
-                  stops: [
-                    global.position -
-                        (1 - 2 * max(0, global.position - 0.5)) * 0.7,
-                    global.position + max(0, 2 * (global.position - 0.5)) * 0.7,
-                  ],
-                ),
-              );
-            },
-            borderWidth: 6,
-            height: 60,
-            loadingIconBuilder:
-                (context, global) => CupertinoActivityIndicator(
-                  color: Color.lerp(Colors.red, Colors.green, global.position),
-                ),
-            onChanged: (value) => setState(() => firstSwitchValue = value),
-            iconBuilder:
-                (value) =>
-                    value
-                        ? RotatedBox(
-                          quarterTurns: -1,
-                          child: Icon(
-                            Icons.power_outlined,
-                            color: Colors.green,
-                            size: 32,
-                          ),
-                        )
-                        : RotatedBox(
-                          quarterTurns: -1,
-                          child: Icon(
-                            Icons.power_settings_new_outlined,
-                            color: Colors.red,
-                            size: 32,
-                          ),
-                        ),
-            textBuilder:
-                (value) =>
-                    value
-                        ? Center(
-                          child: RotatedBox(
-                            quarterTurns: -1,
-                            child: Text(
-                              'Active',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        )
-                        : Center(
-                          child: RotatedBox(
-                            quarterTurns: -1,
-                            child: Text(
-                              'Inactive',
-                              style: TextStyle(fontSize: 12),
-                            ),
-                          ),
-                        ),
+    return Column(
+      children: [
+        AnimatedToggleSwitch.dual(
+          current: firstSwitchValue,
+          first: false,
+          second: true,
+          spacing: 45,
+          style: ToggleStyle(
+            borderColor: Colors.transparent,
+            indicatorColor: Colors.white,
+            backgroundColor: firstSwitchValue ? Colors.green : Colors.red,
           ),
+          animationDuration: Duration(milliseconds: 500),
+          height: 60,
+          loadingIconBuilder: (context, global) {
+            return CupertinoActivityIndicator(); // always show loading indicator if defined
+          },
+          onChanged: (value) {
+            if (!isLoading) toggleRelay(value);
+          },
+          iconBuilder:
+              (value) => Icon(
+                value ? Icons.power : Icons.power_off,
+                color: value ? Colors.green : Colors.red,
+                size: 32,
+              ),
+          textBuilder:
+              (value) => Center(
+                child: Text(
+                  value ? "Active" : "Inactive",
+                  style: TextStyle(fontSize: 18),
+                ),
+              ),
         ),
-      ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Text("ESP Status: "),
+            Icon(
+              isLoading ? Icons.sync : Icons.check_circle,
+              color: isLoading ? Colors.orange : Colors.green,
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
