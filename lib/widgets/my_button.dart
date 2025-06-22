@@ -97,15 +97,18 @@ class _ButtonState extends State<MyButton> {
                 ),
               ),
         ),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text("ESP Status: "),
-            Icon(
-              isLoading ? Icons.sync : Icons.check_circle,
-              color: isLoading ? Colors.orange : Colors.green,
-            ),
-          ],
+      ],
+    );
+  }
+
+  Row myRowStatus() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text("Status: "),
+        Icon(
+          isLoading ? Icons.sync : Icons.check_circle,
+          color: isLoading ? Colors.orange : Colors.green,
         ),
       ],
     );
