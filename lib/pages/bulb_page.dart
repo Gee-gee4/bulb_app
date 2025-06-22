@@ -1,6 +1,7 @@
 import 'package:bulb_app/widgets/color_hex.dart';
 import 'package:bulb_app/widgets/my_button.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class BulbPage extends StatefulWidget {
   const BulbPage({super.key});
@@ -10,6 +11,52 @@ class BulbPage extends StatefulWidget {
 }
 
 class _BulbPageState extends State<BulbPage> {
+  bool isLoading = false;
+  bool switchValue = false;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRelayStatus();
+  }
+
+  Future<void> fetchRelayStatus() async {
+    try {
+      final response = await http
+          .get(Uri.parse("http://192.168.100.48/status"))
+          .timeout(Duration(seconds: 3));
+      if (response.statusCode == 200) {
+        setState(() => switchValue = response.body.trim() == "on");
+      }
+    } catch (e) {
+      // Handle error if needed
+    }
+  }
+
+  Future<void> toggleRelay(bool newValue) async {
+    setState(() => isLoading = true);
+
+    try {
+      final endpoint = newValue ? "/on" : "/off";
+      final response = await http
+          .get(Uri.parse("http://192.168.100.48$endpoint"))
+          .timeout(Duration(seconds: 3));
+
+      if (response.statusCode == 200) {
+        setState(() => switchValue = newValue);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("ESP not reachable"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      setState(() => isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -18,7 +65,11 @@ class _BulbPageState extends State<BulbPage> {
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        actions: [Icon(Icons.person)],
+        actions: [
+          CircleAvatar(
+            backgroundImage: AssetImage('assets/jelly/profile_p.jpeg'),
+          ),
+        ],
       ),
       body: Stack(
         children: [
@@ -49,7 +100,9 @@ class _BulbPageState extends State<BulbPage> {
                       width: 160,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(25),
-                        color: Colors.grey[600]?.withAlpha((0.9 * 255).round()),
+                        color: Colors.green[200]?.withAlpha(
+                          (0.5 * 255).round(),
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(6.0),
@@ -63,8 +116,9 @@ class _BulbPageState extends State<BulbPage> {
                               ),
                             ),
                             Divider(color: hexToColor('e2b4c1')),
+                            // hexToColor('e2b4c1')
                             Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
                                 Text(
                                   'Status: ',
@@ -74,8 +128,11 @@ class _BulbPageState extends State<BulbPage> {
                                   ),
                                 ),
                                 Icon(
-                                  Icons.circle,
-                                  color: Colors.green[900],
+                                  isLoading ? Icons.sync : Icons.check_circle,
+                                  color:
+                                      isLoading
+                                          ? Colors.orange
+                                          : Colors.green[900],
                                   size: 25,
                                 ),
                               ],
@@ -89,7 +146,9 @@ class _BulbPageState extends State<BulbPage> {
                       width: 170,
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(25),
-                        color: Colors.grey[600]?.withAlpha((0.9 * 255).round()),
+                        color: Colors.green[200]?.withAlpha(
+                          (0.5 * 255).round(),
+                        ),
                       ),
                       child: Padding(
                         padding: const EdgeInsets.all(6.0),
@@ -108,7 +167,7 @@ class _BulbPageState extends State<BulbPage> {
                                 Icon(Icons.wifi, color: Colors.green[900]),
                               ],
                             ),
-                            Divider(color: hexToColor('e2b4c1')),
+                            Divider(color: Colors.blueGrey),
                             Text(
                               'Connected: Genius ',
                               style: TextStyle(
@@ -129,8 +188,15 @@ class _BulbPageState extends State<BulbPage> {
                     ),
                   ],
                 ),
-
-                MyButton(),
+                SizedBox(height: 10),
+                SizedBox(
+                  width: 150,
+                  child: MyButton(
+                    isLoading: isLoading,
+                    switchValue: switchValue,
+                    onToggle: toggleRelay,
+                  ),
+                ),
               ],
             ),
           ),
